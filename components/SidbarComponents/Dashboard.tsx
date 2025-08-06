@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { User, Plus, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 
 const Dashboard = () => {
@@ -6,6 +7,12 @@ const Dashboard = () => {
     const [inRevision] = useState(0);
     const [completed] = useState(0);
     const [showProfileTooltip, setShowProfileTooltip] = useState(false);
+
+    const router = useRouter()
+    // Handle new order button click
+    const handleNewOrder = () => {
+        router.push('/?tab=Create order');
+    };
 
     return (
         <div className="w-full h-full bg-black text-white">
@@ -47,7 +54,7 @@ const Dashboard = () => {
                         </p>
                     </div>
 
-                    <button className="group bg-[#FF4232] hover:bg-red-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold shadow-lg hover:shadow-red-500/25 transition-all duration-300 flex items-center gap-2 transform hover:scale-105 whitespace-nowrap">
+                    <button onClick={handleNewOrder} className="group bg-[#FF4232] hover:bg-red-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold shadow-lg hover:shadow-red-500/25 transition-all duration-300 flex items-center gap-2 transform hover:scale-105 whitespace-nowrap">
                         <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
                         <span className="text-sm">New order</span>
                     </button>

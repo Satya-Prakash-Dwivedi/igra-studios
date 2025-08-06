@@ -10,6 +10,7 @@ import Profile from "@/components/SidbarComponents/Profile"
 import Support from "@/components/SidbarComponents/Support"
 import Logout from "@/components/SidbarComponents/Logout"
 import Report from "@/components/SidbarComponents/Report"
+import CreateOrder from "@/components/InnerComponents/CreateOrder"
 
 export default function Layout({ children }: { children: React.ReactNode }) {
 
@@ -44,6 +45,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       break;
     case "Report a bug":
       ContentComponent = Report;
+      break;
+    case "Create order":
+      ContentComponent = CreateOrder;
       break;
     case "Dashboard":
     default:

@@ -17,8 +17,7 @@ interface Order {
 
 const Orders = () => {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const isCreatingOrder = searchParams.get('create') === 'true';
+
 
     // Mock orders data - replace with your actual data
     const [orders] = useState<Order[]>([]);
@@ -40,92 +39,11 @@ const Orders = () => {
 
     // Handle new order button click
     const handleNewOrder = () => {
-        router.push('/orders?create=true');
+        router.push('/?tab=Create order');
     };
-
-    // Handle back from create order
-    const handleBackFromCreate = () => {
-        router.push('/orders');
-    };
-
-    // Handle start new order
-    const handleStartNewOrder = () => {
-        // Navigate to the actual order creation flow
-        router.push('/orders/new');
-    };
-
-    // Render create order view
-    const renderCreateOrderView = () => (
-        <div className="min-h-screen bg-black p-6">
-            <div className="max-w-6xl mx-auto">
-                {/* Header */}
-                <div className="flex items-center mb-6">
-                    <button
-                        onClick={handleBackFromCreate}
-                        className="flex items-center text-gray-300 hover:text-white mr-4"
-                    >
-                        <ArrowLeft className="w-5 h-5 mr-2" />
-                    </button>
-                    <h1 className="text-2xl font-bold text-white">Let's get started!</h1>
-                </div>
-
-                {/* Subtitle */}
-                <p className="text-gray-300 mb-8">Choose how you'd like to start your order.</p>
-
-                {/* Progress Steps */}
-                <div className="bg-gray-900 rounded-lg p-6 mb-8">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                            <div className="w-3 h-3 bg-[#FF4232] rounded-full"></div>
-                            <div className="h-0.5 bg-[#FF4232] w-16 mx-2"></div>
-                            <span className="text-[#FF4232] font-medium">Start your order</span>
-                        </div>
-
-                        <div className="flex items-center">
-                            <div className="h-0.5 bg-gray-600 w-16 mx-2"></div>
-                            <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
-                            <div className="h-0.5 bg-gray-600 w-16 mx-2"></div>
-                            <span className="text-gray-500">Select packages</span>
-                        </div>
-
-                        <div className="flex items-center">
-                            <div className="h-0.5 bg-gray-600 w-16 mx-2"></div>
-                            <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
-                            <div className="h-0.5 bg-gray-600 w-16 mx-2"></div>
-                            <span className="text-gray-500">Finalize details</span>
-                        </div>
-
-                        <div className="flex items-center">
-                            <div className="h-0.5 bg-gray-600 w-16 mx-2"></div>
-                            <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
-                            <span className="text-gray-500">Confirm order</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* New Order Card */}
-                <div
-                    onClick={handleStartNewOrder}
-                    className="bg-gray-900 rounded-lg border-2 border-gray-700 hover:border-[#FF4232] transition-colors cursor-pointer"
-                >
-                    <div className="p-8">
-                        <div className="flex items-start">
-                            <div className="w-8 h-8 bg-[#FF4232] rounded-lg flex items-center justify-center mr-4 mt-1">
-                                <Plus className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-bold text-white mb-2">New Order</h3>
-                                <p className="text-gray-300">Start a new order from scratch</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
 
     // Render main orders view
-    const renderMainOrdersView = () => (
+    return (
         <div className="min-h-screen bg-black p-6">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
@@ -186,9 +104,6 @@ const Orders = () => {
             </div>
         </div>
     );
-
-    // Render based on current view
-    return isCreatingOrder ? renderCreateOrderView() : renderMainOrdersView();
 };
 
 export default Orders;
