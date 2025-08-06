@@ -1,5 +1,8 @@
-import { Inbox, Settings, LayoutDashboardIcon, ListOrdered, CreditCard, LucideCircleDollarSign, Video, User, LucideMessageCircleQuestion, Bug, LogOut } from "lucide-react"
+// components/ui/Sidebar.tsx
+"use client";
 
+import { usePathname, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
     Sidebar,
     SidebarContent,
@@ -7,86 +10,72 @@ import {
     SidebarGroupContent,
     SidebarGroupLabel,
     SidebarMenu,
-    SidebarMenuButton,
     SidebarMenuItem,
-} from "../components/ui/sidebar"
+    SidebarMenuButton,
+} from "../components/ui/sidebar";
+import {
+    LayoutDashboardIcon,
+    ListOrdered,
+    CreditCard,
+    LucideCircleDollarSign,
+    Inbox,
+    Video,
+    User,
+    LucideMessageCircleQuestion,
+    Bug,
+    LogOut,
+} from "lucide-react";
 
-// Menu items.
 const items = [
-    {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: LayoutDashboardIcon,
-    },
-    {
-        title: "Orders",
-        url: "/orders",
-        icon: ListOrdered,
-    },
-    {
-        title: "Credits",
-        url: "/credits",
-        icon: CreditCard,
-    },
-    {
-        title: "Invoices",
-        url: "/invoices",
-        icon: LucideCircleDollarSign,
-    },
-    {
-        title: "Messages",
-        url: "/messages",
-        icon: Inbox,
-    },
-    {
-        title: "Channel",
-        url: "/channel",
-        icon: Video,
-    },
-    {
-        title: "My Profile",
-        url: "profile",
-        icon: User,
-    },
-    {
-        title: "Support",
-        url: "/support",
-        icon: LucideMessageCircleQuestion,
-    },
-    {
-        title: "Logout",
-        url: "/logout",
-        icon: LogOut,
-    },
-    {
-        title: "Report a bug",
-        url: "/reportbug",
-        icon: Bug,
-    },
-]
+    { title: "Dashboard", icon: LayoutDashboardIcon },
+    { title: "Orders", icon: ListOrdered },
+    { title: "Credits", icon: CreditCard },
+    { title: "Invoices", icon: LucideCircleDollarSign },
+    { title: "Messages", icon: Inbox },
+    { title: "Channel", icon: Video },
+    { title: "My Profile", icon: User },
+    { title: "Support", icon: LucideMessageCircleQuestion },
+    { title: "Report a bug", icon: Bug },
+    { title: "Logout", icon: LogOut },
+];
 
 export function AppSidebar() {
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get("tab") ?? "";
+
     return (
         <Sidebar>
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Igra Studios</SidebarGroupLabel>
+                    <SidebarGroupLabel className="text-igrared">
+                        IGRA Studios
+                    </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {items.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild>
-                                        <a href={item.url}>
-                                            <item.icon />
-                                            <span>{item.title}</span>
-                                        </a>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
+                            {items.map((item) => {
+                                const isActive = item.title === activeTab;
+                                return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <Link href={`/?tab=${encodeURIComponent(item.title)}`} passHref>
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={isActive}
+                                                data-active={isActive}
+                                            >
+                                                <a className="flex items-center gap-2">
+                                                    <item.icon />
+                                                    <span>{item.title}</span>
+                                                </a>
+                                            </SidebarMenuButton>
+                                        </Link>
+                                    </SidebarMenuItem>
+                                );
+                            })}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
         </Sidebar>
-    )
+    );
 }
