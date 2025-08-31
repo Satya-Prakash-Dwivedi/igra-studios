@@ -7,7 +7,7 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
                 <div className="bg-black border border-white rounded-lg shadow-lg p-8">
                     <h1 className="text-3xl font-bold text-white text-center mb-8">
-                        Sign In
+                        Log In
                     </h1>
 
                     <form action={login} className="space-y-6">
@@ -48,7 +48,7 @@ export default function LoginPage() {
                         <div className="space-y-4 pt-4">
                             <button
                                 type="submit"
-                                className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+                                className="w-full bg-igrared hover:bg-red-500 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
                             >
                                 Sign In
                             </button>

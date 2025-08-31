@@ -154,7 +154,7 @@ function StageTwo({ onBack }: { onBack: () => void }) {
                 {services.map(({ icon: Icon, title, description }, index) => (
                     <div
                         key={index}
-                        className="border rounded-lg p-4 shadow hover:shadow-lg cursor-pointer flex flex-col hover:bg-gray-900 hover:border-red-300"
+                        className="border rounded-lg p-4 shadow hover:shadow-lg cursor-pointer flex flex-col hover:bg-gray-900 hover:border-red-300 onse"
                     >
                         <div className="mb-2">
                             <Icon size={24} />

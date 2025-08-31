@@ -6,6 +6,7 @@ CREATE TABLE "profiles" (
     "last_name" TEXT NOT NULL,
     "photo_url" TEXT,
     "company_name" TEXT,
+    "channel_link" TEXT,
     "wants_email" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,

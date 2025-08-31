@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -11,20 +7,21 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  url       = env("DATABASE_URL") // set this in your .env
+  directUrl = env("DIRECT_URL") // optional, Supabase pooler direct url
 }
 
 model Profile {
-  id          String   @id @map("user_id") @db.Uuid // Same Uuid as auth.users.id
+  id          String   @id @map("user_id") @db.Uuid // same as auth.users.id
   email       String   @unique
   firstName   String   @map("first_name")
   lastName    String   @map("last_name")
-  photoUrl    String?  @map("photo_url") // Null no picture
+  photoUrl    String?  @map("photo_url") // profile picture URL (S3/Supabase storage)
   companyName String?  @map("company_name")
+  channelLink String?  @map("channel_link") // ✅ NEW field
   wantsEmail  Boolean  @default(true) @map("wants_email")
   createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
-  @@map("profiles") // Table name in Postgres
+  @@map("profiles") // table name in DB
 }
