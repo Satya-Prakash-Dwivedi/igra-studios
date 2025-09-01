@@ -87,7 +87,7 @@ export default function SignupPage() {
                         <div className="space-y-4 pt-4">
                             <button
                                 type="submit"
-                                className="w-full bg-igrared text-black font-medium py-3 px-4 rounded-md transition-colors duration-200 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+                                className="w-full bg-igrared text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 hover:bg-gray-200 hover:text-black focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
                             >
                                 Create Account
                             </button>
