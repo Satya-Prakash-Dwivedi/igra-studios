@@ -1,6 +1,7 @@
 "use client"
 
 import { MessageCircle, BookOpen, FileText, Video } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 const supportOptions = [
     {
@@ -30,6 +31,13 @@ const supportOptions = [
 ]
 
 export default function SupportPage() {
+
+    const router = useRouter();
+
+    const handleChat = () => {
+        router.push('/?tab=Messages')
+    }
+
     return (
         <div className="min-h-screen bg-black flex flex-col items-center px-4 py-12">
             <div className="w-full max-w-5xl">
@@ -49,6 +57,11 @@ export default function SupportPage() {
                                     ? "border-igrared bg-black hover:bg-igrared/20 cursor-pointer"
                                     : "border-white/10 bg-black opacity-50 cursor-not-allowed"
                                 }`}
+                            onClick={() => {
+                                if (option.available && option.title === "Live Chat Support") {
+                                    handleChat();
+                                }
+                            }}
                         >
                             <div className="flex items-start gap-4">
                                 <option.icon
@@ -72,6 +85,7 @@ export default function SupportPage() {
                             </div>
                         </div>
                     ))}
+
                 </div>
 
                 {/* Support Ticket Button */}
