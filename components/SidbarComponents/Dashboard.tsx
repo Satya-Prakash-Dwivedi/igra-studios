@@ -14,6 +14,10 @@ const Dashboard = () => {
         router.push('/?tab=Create order');
     };
 
+    const handleProfile = () => {
+        router.push('/?tab=My Profile')
+    }
+
     return (
         <div className="w-full h-full bg-black text-white">
             <div className="w-full h-full p-3 sm:p-4 lg:p-5">
@@ -32,7 +36,7 @@ const Dashboard = () => {
                         onMouseLeave={() => setShowProfileTooltip(false)}
                     >
                         <User className="w-4 h-4 text-gray-300 group-hover:text-white transition-colors" />
-                        <span className="text-sm">My profile</span>
+                        <span className="text-sm" onClick={handleProfile}>My profile</span>
 
                         {showProfileTooltip && (
                             <div className="absolute -top-12 left-0 bg-gray-800 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap shadow-lg border border-gray-700 z-10">
@@ -122,7 +126,7 @@ const Dashboard = () => {
                             Once you've placed an order, it'll appear here.
                         </p>
 
-                        <button className="bg-[#FF4232] hover:bg-red-500 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium text-sm transform hover:scale-105 shadow-lg hover:shadow-red-500/25">
+                        <button onClick={handleNewOrder} className="bg-[#FF4232] hover:bg-red-500 text-white px-5 sm:px-6 py-2 sm:py-3 rounded-lg transition-all duration-300 font-medium text-sm transform hover:scale-105 shadow-lg hover:shadow-red-500/25">
                             Create your first order
                         </button>
                     </div>
