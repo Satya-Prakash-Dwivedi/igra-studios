@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ProfileSkeleton from "../InnerComponents/ProfileSkeleton";
 
 type Profile = {
     user_id: string;
@@ -84,7 +85,7 @@ export default function ProfilePage() {
         }
     }
 
-    if (loading) return <p className="text-white">Loading...</p>;
+    if (loading) return <ProfileSkeleton />;
     if (!profile) return <p className="text-white">No profile found</p>;
 
     return (
