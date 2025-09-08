@@ -18,10 +18,41 @@ model Profile {
   lastName    String   @map("last_name")
   photoUrl    String?  @map("photo_url") // profile picture URL (S3/Supabase storage)
   companyName String?  @map("company_name")
-  channelLink String?  @map("channel_link") // ✅ NEW field
   wantsEmail  Boolean  @default(true) @map("wants_email")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
+  channels Channel[]
+
   @@map("profiles") // table name in DB
+}
+
+model Channel {
+  id          String  @id @default(cuid())
+  logo        String?
+  name        String
+  link        String
+  pace        Pace
+  tone        Tone
+  description String?
+  profileId   String  @db.Uuid
+  profile     Profile @relation(fields: [profileId], references: [id])
+
+  @@map("channels")
+}
+
+enum Pace {
+  Slow
+  Normal
+  Fast
+  Super
+}
+
+enum Tone {
+  Funny
+  Elegant
+  Serious
+  Casual
+  Professional
+  Informational
 }
