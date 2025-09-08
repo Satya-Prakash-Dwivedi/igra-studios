@@ -7,7 +7,7 @@ import Header from "@/components/Header";
 
 export default function LayoutContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const noSidebarRoutes = ["/login", "/signup", "/verify-email"];
+    const noSidebarRoutes = ["/login", "/signup", "/verify-email", "/error"];
     const hideSidebar = noSidebarRoutes.includes(pathname);
 
     if (hideSidebar) {
