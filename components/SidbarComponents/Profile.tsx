@@ -10,7 +10,6 @@ type Profile = {
     last_name: string;
     company_name?: string | null;
     photo_url?: string | null;
-    channel_link?: string | null;
     wants_email: boolean;
 };
 
@@ -19,19 +18,29 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    const [successMessage, setSuccessMessage] = useState("");
 
+    // Fetch profile
     useEffect(() => {
         async function fetchProfile() {
-            const res = await fetch("/api/profile", { credentials: "include" });
-            if (res.ok) {
-                const data = await res.json();
-                setProfile(data.profile);
+            setLoading(true);
+            try {
+                const res = await fetch("/api/profile", { credentials: "include" , cache: "no-store"});
+                if (res.ok) {
+                    const data = await res.json();
+                    setProfile(data.profile);
+                } else {
+                    console.error("Error fetching profile");
+                }
+            } catch (err) {
+                console.error(err);
             }
             setLoading(false);
         }
         fetchProfile();
     }, []);
 
+    // Update profile
     async function handleUpdate(e: React.FormEvent) {
         e.preventDefault();
         if (!profile) return;
@@ -40,7 +49,7 @@ export default function ProfilePage() {
 
         let photoUrl = profile.photo_url;
 
-        // 📤 Upload file if selected
+        // Upload new file if selected
         if (file) {
             const formData = new FormData();
             formData.append("file", file);
@@ -51,13 +60,9 @@ export default function ProfilePage() {
                 credentials: "include",
             });
 
-            console.log(uploadRes)
-
             if (uploadRes.ok) {
                 const { url } = await uploadRes.json();
-                console.log('url: ', url)
                 photoUrl = url;
-                console.log('photourl', photoUrl)
             } else {
                 alert("Error uploading file");
                 setSaving(false);
@@ -65,7 +70,7 @@ export default function ProfilePage() {
             }
         }
 
-        // 📝 Save profile updates
+        // PUT updated profile
         const res = await fetch("/api/profile", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -76,9 +81,13 @@ export default function ProfilePage() {
         setSaving(false);
 
         if (res.ok) {
-            const data = await res.json();
-            setProfile(data.profile);
-            alert("Profile updated!");
+            const { profile: updatedProfile } = await res.json();
+            setProfile(updatedProfile); // ✅ update state first
+            setFile(null);
+            setSuccessMessage("Profile updated successfully!"); // ✅ show message after state update
+
+            // Hide success message after 3s
+            setTimeout(() => setSuccessMessage(""), 3000);
         } else {
             const { error } = await res.json();
             alert("Error: " + error);
@@ -91,7 +100,12 @@ export default function ProfilePage() {
     return (
         <div className="min-h-screen bg-black text-white p-12">
             <div className="max-w-4xl mx-auto w-full">
-                {/* Profile Photo Section */}
+                {/* Success message */}
+                {successMessage && (
+                    <div className="mb-6 p-4 bg-green-600 rounded">{successMessage}</div>
+                )}
+
+                {/* Profile Photo */}
                 <div className="mb-12">
                     <label className="block text-lg font-medium text-white mb-6">
                         Profile photo or logo
@@ -118,17 +132,18 @@ export default function ProfilePage() {
                             >
                                 Choose file
                             </label>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setFile(null);
-                                    setProfile({ ...profile, photo_url: null });
-                                }}
-                                className="text-blue-400 text-sm hover:underline flex items-center space-x-1 self-start"
-                            >
-                                <span>×</span>
-                                <span>Clear</span>
-                            </button>
+                            {profile.photo_url && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFile(null);
+                                        setProfile({ ...profile, photo_url: null });
+                                    }}
+                                    className="text-blue-400 text-sm hover:underline flex items-center space-x-1 self-start ml-7"
+                                >
+                                    <span>Remove</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -136,84 +151,35 @@ export default function ProfilePage() {
                 {/* Name Fields */}
                 <div className="grid grid-cols-2 gap-8 mb-8">
                     <div>
-                        <label className="block text-lg font-medium text-white mb-3">
-                            First
-                        </label>
+                        <label className="block text-lg font-medium text-white mb-3">First</label>
                         <input
                             type="text"
                             value={profile.first_name || ""}
-                            onChange={(e) =>
-                                setProfile({ ...profile, first_name: e.target.value })
-                            }
+                            onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
                             className="w-full border border-white/30 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors text-lg"
                         />
                     </div>
                     <div>
-                        <label className="block text-lg font-medium text-white mb-3">
-                            Last
-                        </label>
+                        <label className="block text-lg font-medium text-white mb-3">Last</label>
                         <input
                             type="text"
                             value={profile.last_name || ""}
-                            onChange={(e) =>
-                                setProfile({ ...profile, last_name: e.target.value })
-                            }
-                            placeholder="Last name"
-                            className="w-full border border-white/30 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors placeholder-white/40 text-lg"
+                            onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                            className="w-full border border-white/30 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors text-lg"
                         />
                     </div>
                 </div>
 
                 {/* Company Field */}
                 <div className="mb-8">
-                    <label className="block text-lg font-medium text-white mb-3">
-                        DBA / Company
-                    </label>
+                    <label className="block text-lg font-medium text-white mb-3">DBA / Company</label>
                     <input
                         type="text"
                         value={profile.company_name || ""}
-                        onChange={(e) =>
-                            setProfile({ ...profile, company_name: e.target.value })
-                        }
+                        onChange={(e) => setProfile({ ...profile, company_name: e.target.value })}
                         placeholder="Type here..."
                         className="w-full border border-white/30 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors placeholder-white/40 text-lg"
                     />
-                </div>
-
-                {/* YouTube Channel Section */}
-                <div className="mb-10">
-                    <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-6 h-6 bg-red-600 rounded flex items-center justify-center">
-                            <div className="w-0 h-0 border-l-[3px] border-l-transparent border-r-[3px] border-r-transparent border-b-[4px] border-b-white ml-0.5"></div>
-                        </div>
-                        <span className="text-lg font-medium text-white">Have a YouTube channel?</span>
-                    </div>
-                    <p className="text-base text-white/70 mb-4">Help us get a feel for your audience and style.</p>
-                    <input
-                        type="text"
-                        value={profile.channel_link || ""}
-                        onChange={(e) =>
-                            setProfile({ ...profile, channel_link: e.target.value })
-                        }
-                        placeholder="https://www.youtube.com/@yourchannel"
-                        className="w-full border border-white/30 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors placeholder-white/40 text-lg"
-                    />
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex space-x-6 mb-10">
-                    <button
-                        type="button"
-                        className="bg-black border border-white/30 text-white px-6 py-3 rounded-lg text-base font-medium hover:bg-zinc-900 transition-colors"
-                    >
-                        Change my email
-                    </button>
-                    <button
-                        type="button"
-                        className="bg-black border border-white/30 text-white px-6 py-3 rounded-lg text-base font-medium hover:bg-zinc-900 transition-colors"
-                    >
-                        Change my password
-                    </button>
                 </div>
 
                 {/* Notifications */}
@@ -224,9 +190,7 @@ export default function ProfilePage() {
                             type="checkbox"
                             id="email-notifications"
                             checked={profile.wants_email ?? true}
-                            onChange={(e) =>
-                                setProfile({ ...profile, wants_email: e.target.checked })
-                            }
+                            onChange={(e) => setProfile({ ...profile, wants_email: e.target.checked })}
                             className="w-5 h-5 text-red-600 bg-black border-white/30 rounded focus:ring-red-500"
                         />
                         <label htmlFor="email-notifications" className="text-base text-white">

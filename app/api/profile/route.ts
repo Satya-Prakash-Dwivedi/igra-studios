@@ -1,36 +1,48 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { randomUUID } from "crypto";
+import { supabaseAdmin } from "@/utils/supabase/admin";
+import { revalidatePath } from "next/cache";
+
+export const dynamic = "force-dynamic";
+
 // GET profile
 export async function GET() {
     console.log("➡️ [API] GET /api/profile called");
 
     const supabase = await createClient();
 
+    // Step 1: Check auth
     const {
         data: { user },
         error: authError,
     } = await supabase.auth.getUser();
 
-    console.log("👤 [API] Auth result:", { user, authError });
+    console.log("👤 [DEBUG] Auth result:", { user, authError });
 
     if (authError || !user) {
-        console.error("❌ [API] Unauthorized:", authError?.message);
+        console.error("❌ [DEBUG] Unauthorized: user not found or auth error");
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch profile row
-    const { data, error } = await supabase
+    // Step 2: Check if user_id in profiles matches
+    console.log("➡️ [DEBUG] Attempting to fetch profile for user_id:", user.id);
+
+    // Step 3: Fetch profile
+    const { data, error } = await supabaseAdmin
         .from("profiles")
         .select("*")
-        .eq("user_id", user.id) // ✅ use user_id
+        .eq("user_id", user.id)
         .single();
 
-    console.log("📦 [API] Profile fetch result:", { data, error });
+    // Step 4: Log raw response
+    console.log("📦 [DEBUG] Profile fetch raw response:", { data, error });
 
+    // Step 5: Debug permissions / visibility
+    if (!data && !error) {
+        console.warn("⚠️ [DEBUG] No profile found. Row might exist but is invisible due to RLS.");
+    }
     if (error) {
-        console.error("❌ [API] Profile fetch error:", error.message);
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        console.error("❌ [DEBUG] Supabase select error:", error);
     }
 
     return NextResponse.json({ profile: data });
@@ -43,47 +55,44 @@ export async function PUT(req: Request) {
     const supabase = await createClient();
     const body = await req.json();
 
-    console.log("📥 [API] Update payload:", body);
+    console.log("📥 [DEBUG] Update payload:", body);
 
     const {
         data: { user },
         error: authError,
     } = await supabase.auth.getUser();
 
-    console.log("👤 [API] Auth result:", { user, authError });
+    console.log("👤 [DEBUG] Auth result:", { user, authError });
 
     if (authError || !user) {
-        console.error("❌ [API] Unauthorized update attempt");
+        console.error("❌ [DEBUG] Unauthorized update attempt");
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Only update allowed fields
     const updates = {
         first_name: body.first_name,
         last_name: body.last_name,
         company_name: body.company_name,
         photo_url: body.photo_url,
-        channel_link: body.channel_link, // ✅ add this
         wants_email: body.wants_email,
         updated_at: new Date().toISOString(),
     };
 
-    console.log("📝 [API] Updating profile with:", updates);
+    console.log("📝 [DEBUG] Profile updates to apply:", updates);
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from("profiles")
         .update(updates)
-        .eq("user_id", user.id) // ✅ use user_id
+        .eq("user_id", user.id)
         .select()
-        .single();
+        .maybeSingle();
 
-    console.log("📦 [API] Profile update result:", { data, error });
+    console.log("📦 [DEBUG] Profile update raw response:", { data, error });
 
     if (error) {
-        console.error("❌ [API] Update error:", error.message);
+        console.error("❌ [DEBUG] Update failed:", error.message);
         return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ profile: data });
 }
-
