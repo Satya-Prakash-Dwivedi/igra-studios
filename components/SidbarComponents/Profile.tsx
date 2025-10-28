@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import ProfileSkeleton from "../InnerComponents/ProfileSkeleton";
+// No icons are needed anymore, so the import is removed.
 
+// --- UPDATED TYPE ---
+// Removed cover_image_url
 type Profile = {
     user_id: string;
     email: string;
@@ -17,10 +20,11 @@ export default function ProfilePage() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
+    const [file, setFile] = useState<File | null>(null); // For avatar
+    // Removed the coverFile state
     const [successMessage, setSuccessMessage] = useState("");
 
-    // Fetch profile
+    // Fetch profile (No change)
     useEffect(() => {
         async function fetchProfile() {
             setLoading(true);
@@ -40,7 +44,7 @@ export default function ProfilePage() {
         fetchProfile();
     }, []);
 
-    // Update profile
+    // --- UPDATED: handleUpdate function ---
     async function handleUpdate(e: React.FormEvent) {
         e.preventDefault();
         if (!profile) return;
@@ -48,12 +52,13 @@ export default function ProfilePage() {
         setSaving(true);
 
         let photoUrl = profile.photo_url;
+        // Removed coverUrl logic
 
-        // Upload new file if selected
+        // 1. Upload new AVATAR if selected
         if (file) {
             const formData = new FormData();
             formData.append("file", file);
-            formData.append("bucket", "avatars")
+            formData.append("bucket", "avatars");
 
             const uploadRes = await fetch("/api/upload", {
                 method: "POST",
@@ -65,17 +70,23 @@ export default function ProfilePage() {
                 const { url } = await uploadRes.json();
                 photoUrl = url;
             } else {
-                alert("Error uploading file");
+                alert("Error uploading avatar");
                 setSaving(false);
                 return;
             }
         }
 
-        // PUT updated profile
+        // 2. Removed Cover Image upload logic
+
+        // 3. PUT updated profile
         const res = await fetch("/api/profile", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...profile, photo_url: photoUrl }),
+            body: JSON.stringify({ 
+                ...profile, 
+                photo_url: photoUrl, 
+                // Removed cover_image_url
+            }),
             credentials: "include",
         });
 
@@ -83,11 +94,11 @@ export default function ProfilePage() {
 
         if (res.ok) {
             const { profile: updatedProfile } = await res.json();
-            setProfile(updatedProfile); // ✅ update state first
+            setProfile(updatedProfile);
             setFile(null);
-            setSuccessMessage("Profile updated successfully!"); // ✅ show message after state update
+            // Removed setCoverFile(null)
+            setSuccessMessage("Profile updated successfully!");
 
-            // Hide success message after 3s
             setTimeout(() => setSuccessMessage(""), 3000);
         } else {
             const { error } = await res.json();
@@ -98,117 +109,127 @@ export default function ProfilePage() {
     if (loading) return <ProfileSkeleton />;
     if (!profile) return <p className="text-white">No profile found</p>;
 
+    // --- NEW JSX STRUCTURE ---
     return (
-        <div className="min-h-screen bg-black text-white p-12">
-            <div className="max-w-4xl mx-auto w-full">
+        <div className="min-h-screen bg-black text-white p-8">
+            <form onSubmit={handleUpdate} className="max-w-5xl mx-auto w-full">
                 {/* Success message */}
                 {successMessage && (
-                    <div className="mb-6 p-4 bg-green-600 rounded">{successMessage}</div>
+                    <div className="mb-6 p-4 bg-green-600 rounded-lg">{successMessage}</div>
                 )}
 
-                {/* Profile Photo */}
-                <div className="mb-12">
-                    <label className="block text-lg font-medium text-white mb-6">
-                        Profile photo or logo
-                    </label>
-                    <div className="flex items-start space-x-6">
-                        <div className="relative">
+                {/* === SECTION 1: PROFILE HEADER (REMOVED) === */}
+                {/* The header section is now gone. */}
+
+                {/* === SECTION 2: PERSONAL INFORMATION === */}
+                <div className="bg-[#171717] border border-zinc-700 rounded-xl p-8 shadow-md">
+                    <h2 className="text-2xl font-semibold mb-8">Personal Information</h2>
+
+                    {/* Profile Photo Upload */}
+                    <div className="mb-8">
+                        <label className="block text-lg font-medium text-white mb-4">
+                            Profile Image
+                        </label>
+                        <div className="flex items-center space-x-6">
+                            {/* This is just a small preview for the uploader */}
                             <img
                                 src={file ? URL.createObjectURL(file) : profile.photo_url || "/default-avatar.png"}
                                 alt="Profile"
-                                className="w-24 h-24 rounded-lg object-cover border border-white/20"
+                                className="w-20 h-20 rounded-lg object-cover border border-white/20"
                             />
-                        </div>
-                        <div className="flex flex-col space-y-3">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                className="hidden"
-                                id="photo-upload"
-                            />
-                            <label
-                                htmlFor="photo-upload"
-                                className="cursor-pointer bg-zinc-800 border border-white/20 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
-                            >
-                                Choose file
-                            </label>
-                            {profile.photo_url && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setFile(null);
-                                        setProfile({ ...profile, photo_url: null });
-                                    }}
-                                    className="text-blue-400 text-sm hover:underline flex items-center space-x-1 self-start ml-7"
+                            <div className="flex flex-col space-y-3">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                    className="hidden"
+                                    id="photo-upload"
+                                />
+                                <label
+                                    htmlFor="photo-upload"
+                                    className="cursor-pointer bg-zinc-700 border border-zinc-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-zinc-600 transition-colors"
                                 >
-                                    <span>Remove</span>
-                                </button>
-                            )}
+                                    Choose file
+                                </label>
+                                {profile.photo_url && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFile(null);
+                                            setProfile({ ...profile, photo_url: null });
+                                        }}
+                                        className="text-red-500 text-sm ml-7 hover:underline self-start"
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Name Fields */}
-                <div className="grid grid-cols-2 gap-8 mb-8">
+                    {/* Name Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label className="block text-base font-medium text-zinc-300 mb-2">First Name</label>
+                            <input
+                                type="text"
+                                value={profile.first_name || ""}
+                                onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
+                                className="w-full border border-zinc-600 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-[#FE4231] focus:border-[#FE4231] outline-none transition-colors text-base"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-base font-medium text-zinc-300 mb-2">Last Name</label>
+                            <input
+                                type="text"
+                                value={profile.last_name || ""}
+                                onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
+                                className="w-full border border-zinc-600 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-[#FE4231] focus:border-[#FE4231] outline-none transition-colors text-base"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Company Field */}
                     <div>
-                        <label className="block text-lg font-medium text-white mb-3">First</label>
+                        <label className="block text-base font-medium text-zinc-300 mb-2">DBA / Company</label>
                         <input
                             type="text"
-                            value={profile.first_name || ""}
-                            onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
-                            className="w-full border border-white/30 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors text-lg"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-lg font-medium text-white mb-3">Last</label>
-                        <input
-                            type="text"
-                            value={profile.last_name || ""}
-                            onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
-                            className="w-full border border-white/30 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors text-lg"
+                            value={profile.company_name || ""}
+                            onChange={(e) => setProfile({ ...profile, company_name: e.target.value })}
+                            placeholder="Your company name"
+                            className="w-full border border-zinc-600 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-[#FE4231] focus:border-[#FE4231] outline-none transition-colors placeholder-zinc-500 text-base"
                         />
                     </div>
                 </div>
 
-                {/* Company Field */}
-                <div className="mb-8">
-                    <label className="block text-lg font-medium text-white mb-3">DBA / Company</label>
-                    <input
-                        type="text"
-                        value={profile.company_name || ""}
-                        onChange={(e) => setProfile({ ...profile, company_name: e.target.value })}
-                        placeholder="Type here..."
-                        className="w-full border border-white/30 px-4 py-3 rounded-lg bg-black text-white focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-colors placeholder-white/40 text-lg"
-                    />
-                </div>
-
-                {/* Notifications */}
-                <div className="mb-12">
-                    <h3 className="text-lg font-medium text-white mb-4">Notifications preferences</h3>
+                {/* === SECTION 3: NOTIFICATION PREFERENCES === */}
+                <div className="bg-[#171717] border border-zinc-700 rounded-xl p-8 mt-8">
+                    <h2 className="text-2xl font-semibold mb-6">Notification Preferences</h2>
                     <div className="flex items-center space-x-3">
                         <input
                             type="checkbox"
                             id="email-notifications"
                             checked={profile.wants_email ?? true}
                             onChange={(e) => setProfile({ ...profile, wants_email: e.target.checked })}
-                            className="w-5 h-5 text-red-600 bg-black border-white/30 rounded focus:ring-red-500"
+                            className="w-5 h-5 text-[#FE4231] bg-black border-zinc-600 rounded focus:ring-[#FE4231]"
                         />
-                        <label htmlFor="email-notifications" className="text-base text-white">
+                        <label htmlFor="email-notifications" className="text-base text-zinc-200">
                             Send new notifications to my email
                         </label>
                     </div>
                 </div>
 
                 {/* Save Button */}
-                <button
-                    onClick={handleUpdate}
-                    disabled={saving}
-                    className="bg-[#FF4232] px-8 py-3 rounded-xl text-white text-lg font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
-                >
-                    {saving ? "Saving..." : "Save Changes"}
-                </button>
-            </div>
+                <div className="mt-8">
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className="bg-[#FE4231] px-4 py-1 rounded-xl text-white text-md font-semibold hover:bg-[#E03A2A] transition-colors disabled:opacity-50"
+                    >
+                        {saving ? "Saving..." : "Save Changes"}
+                    </button>
+                </div>
+            </form>
         </div>
     );
 }
