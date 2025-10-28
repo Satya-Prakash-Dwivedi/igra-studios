@@ -7,7 +7,7 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
                 <div className="bg-black border border-white rounded-lg shadow-lg p-8">
                     <h1 className="text-3xl font-bold text-white text-center mb-8">
-                        Log In
+                        Sign In
                     </h1>
 
                     <form action={login} className="space-y-6">

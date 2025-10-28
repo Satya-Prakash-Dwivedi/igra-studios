@@ -22,7 +22,7 @@ const Dashboard = () => {
         <div className="w-full h-full bg-black text-white">
             <div className="w-full h-full p-3 sm:p-4 lg:p-5">
                 {/* Profile Setup Section */}
-                <div className="w-full bg-slate-800 rounded-xl p-5 sm:p-6 mb-5 sm:mb-6 border border-slate-700 shadow-xl">
+                <div className="w-full bg-black rounded-xl p-5 sm:p-6 mb-5 sm:mb-6 border border-slate-700 shadow-xl">
                     <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3 text-white">
                         Finish your profile setup
                     </h1>
@@ -31,7 +31,7 @@ const Dashboard = () => {
                     </p>
 
                     <button
-                        className="group relative bg-slate-700 hover:bg-slate-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg border border-slate-600 hover:border-slate-500 transition-all duration-300 flex items-center gap-2 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                        className="group bg-[#FF4232] hover:bg-red-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold shadow-lg hover:shadow-red-500/25 transition-all duration-300 flex items-center gap-2 transform hover:scale-105 whitespace-nowrap"
                         onMouseEnter={() => setShowProfileTooltip(true)}
                         onMouseLeave={() => setShowProfileTooltip(false)}
                     >
@@ -51,7 +51,7 @@ const Dashboard = () => {
                 <div className="w-full flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4 mb-6 sm:mb-8">
                     <div className="flex-1">
                         <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-white">
-                            Welcome back, Satya!
+                            Welcome back, {"{Username}"}
                         </h2>
                         <p className="text-gray-400 text-base sm:text-lg">
                             Here's what's happening with your orders
@@ -67,7 +67,7 @@ const Dashboard = () => {
                 {/* Order Status Cards - Full Width Grid */}
                 <div className="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 mb-6 sm:mb-8">
                     {/* Active Orders */}
-                    <div className="group bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-700 hover:border-blue-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 w-full">
+                    <div className="group bg-black p-4 sm:p-5 rounded-xl border border-slate-700 hover:border-blue-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 w-full">
                         <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                             <div className="p-2 bg-blue-500/20 rounded-full group-hover:bg-blue-500/30 transition-colors">
                                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
@@ -81,7 +81,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* In Revision */}
-                    <div className="group bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-700 hover:border-yellow-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 w-full">
+                    <div className="group bg-black p-4 sm:p-5 rounded-xl border border-slate-700 hover:border-yellow-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 w-full">
                         <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                             <div className="p-2 bg-yellow-500/20 rounded-full group-hover:bg-yellow-500/30 transition-colors">
                                 <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
@@ -95,7 +95,7 @@ const Dashboard = () => {
                     </div>
 
                     {/* Completed */}
-                    <div className="group bg-slate-800 p-4 sm:p-5 rounded-xl border border-slate-700 hover:border-green-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 w-full sm:col-span-2 xl:col-span-1">
+                    <div className="group bg-black p-4 sm:p-5 rounded-xl border border-slate-700 hover:border-green-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 w-full sm:col-span-2 xl:col-span-1">
                         <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                             <div className="p-2 bg-green-500/20 rounded-full group-hover:bg-green-500/30 transition-colors">
                                 <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
@@ -110,7 +110,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Recent Orders Section - Full Width */}
-                <div className="w-full bg-slate-800 rounded-xl p-5 sm:p-6 border border-slate-700 shadow-xl">
+                <div className="w-full bg-black rounded-xl p-5 sm:p-6 border border-slate-700 shadow-xl">
                     <h3 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-5 text-white">
                         Your recent orders
                     </h3>

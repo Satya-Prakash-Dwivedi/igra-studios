@@ -5,7 +5,7 @@ import { randomUUID } from "crypto";
 export async function POST(req: Request) {
     const supabase = await createClient();
 
-    // Get current user
+    // 1. Get current user
     const {
         data: { user },
         error: authError,
@@ -17,13 +17,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // 2. Parse form data
     const formData = await req.formData();
     const file = formData.get("file") as File;
+    const bucket = formData.get("bucket") as string;
 
+    // 3. Validate the file and bucket
     if (!file) {
         console.error("❌ [UPLOAD] No file provided");
         return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
+
+    if (!bucket || (bucket !== "avatars" && bucket !== "logos")) {
+        console.error(`❌ [UPLOAD] Invalid or missing bucket: ${bucket}`);
+        return NextResponse.json({ error: "Invalid bucket specified" }, { status: 400 });
+    }
+
+    // 4. Prepare the file path
 
     // Convert to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -33,7 +43,7 @@ export async function POST(req: Request) {
     const filePath = `${user.id}/${randomUUID()}.${ext}`;
 
     console.log("📤 [UPLOAD] Uploading file:", {
-        bucket: "avatars",
+        bucket: bucket,
         filePath,
         type: file.type,
         size: buffer.length,
@@ -41,7 +51,7 @@ export async function POST(req: Request) {
     });
 
     const { error: uploadError } = await supabase.storage
-        .from("avatars")
+        .from(bucket)
         .upload(filePath, buffer, {
             contentType: file.type,
             upsert: true,
@@ -57,7 +67,9 @@ export async function POST(req: Request) {
 
     const {
         data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(filePath);
+    } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
 
     console.log("✅ [UPLOAD] File uploaded successfully:", publicUrl);
 
