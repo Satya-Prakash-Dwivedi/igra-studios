@@ -11,6 +11,9 @@ import ScriptForm from '../Forms/Script';
 import ConsultationForm from '../Forms/Consultation';
 import CustomForm from '../Forms/Custom';
 
+import { supabase } from "@/utils/supabase/client";
+import * as tus from 'tus-js-client';
+
 export default function CreateOrder() {
     // Track the current stage: 'start' or 'details' (you can rename as needed)
     const [stage, setStage] = useState<'start' | 'details'>('start');
@@ -68,24 +71,127 @@ const services = [
 type ServiceInstance = {
     id: string;
     serviceIndex: number; // Index in services array
-    // Optionally: formData: any;
+    formData: Record<string, any>;
 };
 
 // Stage Two UI (next step in order flow)
 function StageTwo({ onBack }: { onBack: () => void }) {
     const [selectedServices, setSelectedServices] = useState<ServiceInstance[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("");
 
     // Add a new instance for a service
     function handleAdd(index: number) {
+        const service = services[index];
+        let defaultFormData: Record<string, any> = {};
+
+        // --- Set default values for each form ---
+        // This is so React can "control" the inputs
+        switch (service.title) {
+            case "Video":
+                defaultFormData = {
+                    rawFootageLength: "",
+                    finalVideoLength: "",
+                    pace: "Normal",
+                    tone: [], // Use an empty array for multi-select
+                    assetsLink: "",
+                    uploadedFile: null, // Will hold the File object
+                };
+                break;
+            case "Thumbnail Design":
+                defaultFormData = {
+                    thumbnailText: "",
+                    note: "",
+                    style: null,
+                    referenceLink: "",
+                    uploadedFile: null,
+                };
+                break;
+            case "Custom Intro":
+                defaultFormData = {
+                    introTitle: "",
+                    duration: "",
+                    style: null,
+                    animation: false,
+                    referenceLink: "",
+                    uploadedFile: null,
+                };
+                break;
+            case "Custom Outro":
+                defaultFormData = {
+                    outroText: "",
+                    duration: "",
+                    style: null,
+                    addMusic: false,
+                    referenceLink: "",
+                    uploadedFile: null,
+                };
+                break;
+            case "AI Voiceover":
+                defaultFormData = {
+                    duration: "",
+                    voicePreference: "",
+                    notes: "",
+                    uploadedFile: null,
+                    scriptText: "",
+                    pace: "Normal",
+                    tone: [],
+                };
+                break;
+            case "Script Writing":
+                defaultFormData = {
+                    scriptType: "YouTube Video",
+                    wordCount: "",
+                    tone: null,
+                    topic: "",
+                    uploadedBrief: null,
+                    referenceLink: "",
+                    notes: "",
+                };
+                break;
+            case "Consultation call":
+                defaultFormData = {
+                    duration: "15",
+                    topics: "",
+                    additionalNotes: "",
+                    uploadedFile: null,
+                    referenceLink: "",
+                };
+                break;
+            case "Custom request":
+                defaultFormData = {
+                    description: "",
+                    uploadedFile: null,
+                    referenceLink: "",
+                    contact: "",
+                };
+                break;
+        }
+
         setSelectedServices(prev => [
             ...prev,
-            { id: makeId(), serviceIndex: index }
+            { 
+                id: makeId(), 
+                serviceIndex: index,
+                formData: defaultFormData // <-- Give this instance its blank data
+            }
         ]);
     }
 
     // Remove a specific instance by ID
     function handleRemove(id: string) {
         setSelectedServices(prev => prev.filter(inst => inst.id !== id));
+    }
+
+     function handleDataChange(instanceId: string, field: string, value: any) {
+        setSelectedServices(prev =>
+            prev.map(inst =>
+                inst.id === instanceId
+                    // Find the right instance, update its formData, and return the new state
+                    ? { ...inst, formData: { ...inst.formData, [field]: value } }
+                    : inst
+            )
+        );
     }
 
     // Counter of instances per service
@@ -102,25 +208,27 @@ function StageTwo({ onBack }: { onBack: () => void }) {
 
     // Helper to render the correct form
     function renderForm(instance: ServiceInstance) {
-        const { serviceIndex, id } = instance;
+        const { serviceIndex, id, formData } = instance;
         const service = services[serviceIndex];
         const sharedProps = {
-            key: id,
-            instanceId: id,
-            service,
-            onRemove: () => handleRemove(id),
-        };
+        key: id,
+        instanceId: id,
+        service,
+        onRemove: () => handleRemove(id),
+        formData: formData, // <-- Pass the data *down*
+        onChange: (field: string, value: any) => handleDataChange(id, field, value), // <-- Pass the handler *down*
+    };
         // Switch on serviceIndex (or title). Easy to maintain.
         switch (serviceIndex) {
-            case 0: return <VideoForm {...sharedProps} />;
-            case 1: return <ThumbnailForm {...sharedProps} />;
-            case 2: return <IntroForm {...sharedProps} />;
-            case 3: return <OutroForm {...sharedProps} />;
-            case 4: return <VoiceoverForm {...sharedProps} />;
-            case 5: return <ScriptForm {...sharedProps} />;
-            case 6: return <ConsultationForm {...sharedProps} />;
-            case 7: return <CustomForm {...sharedProps} />;
-            default:
+        case 0: return <VideoForm {...sharedProps} />;
+        case 1: return <ThumbnailForm {...sharedProps} />;
+        case 2: return <IntroForm {...sharedProps} />;
+        case 3: return <OutroForm {...sharedProps} />;
+        case 4: return <VoiceoverForm {...sharedProps} />;
+        case 5: return <ScriptForm {...sharedProps} />;
+        case 6: return <ConsultationForm {...sharedProps} />;
+        case 7: return <CustomForm {...sharedProps} />;
+        default:
                 return (
                     <div key={id} className="p-6 border rounded bg-gray-900 flex flex-col">
                         <div className="flex items-center justify-between mb-2">
@@ -135,6 +243,156 @@ function StageTwo({ onBack }: { onBack: () => void }) {
                         <p className="text-gray-400">{service.description}</p>
                     </div>
                 );
+        }
+    }
+
+    // --- 6. handleStripePayment (The "Upload & Pay" logic) ---
+    async function handleStripePayment() {
+        setIsLoading(true);
+
+        const supabaseClient = supabase();
+
+        // 1. GET PROJECT ID AND SESSION
+        const projectId = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID;
+        if (!projectId) {
+            alert("Supabase Project ID is not configured. Please check your .env.local file.");
+            setIsLoading(false);
+            return;
+        }
+
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError || !session) {
+            alert("Could not get user session. Please log in again.");
+            setIsLoading(false);
+            return;
+        }
+        const accessToken = session.access_token;
+
+        // This holds the final data we send to Stripe (with URLs, not File objects)
+        let finalOrderInstances = JSON.parse(JSON.stringify(selectedServices));
+
+        try {
+            // --- 2. UPLOAD FILES ---
+            setLoadingMessage("Uploading files, please wait...");
+
+            for (let i = 0; i < finalOrderInstances.length; i++) {
+                const instance = selectedServices[i]; // The *real* one with the File object
+                const data = instance.formData;
+                const service = services[instance.serviceIndex];
+
+                if (data.uploadedFile && data.uploadedFile instanceof File) {
+                    const file: File = data.uploadedFile;
+                    let fileUrl = "";
+                    let bucket = "assets"; // Default bucket for small files
+                    let useTus = false;
+
+                    // --- THIS IS THE 100GB LOGIC ---
+                    if (service.title === "Video" && file.size > 20 * 1024 * 1024) { // 20MB threshold
+                        bucket = "videos"; // Put large files in a 'videos' bucket
+                        useTus = true;
+                    }
+
+                    const fileExt = file.name.split('.').pop();
+                    const filePath = `${Date.now()}.${fileExt}`;
+
+                    if (useTus) {
+                        // --- TUS UPLOAD (for 100GB videos) ---
+                        setLoadingMessage(`Preparing ${file.name} for upload...`);
+
+                        // Wrap TUS upload in a Promise to use await
+                        await new Promise((resolve, reject) => {
+                            const upload = new tus.Upload(file, {
+                                endpoint: `https://${projectId}.storage.supabase.co/storage/v1/upload/resumable`,
+                                retryDelays: [0, 3000, 5000, 10000, 20000],
+                                headers: {
+                                    authorization: `Bearer ${accessToken}`,
+                                    'x-upsert': 'true', // Overwrite existing file
+                                },
+                                uploadDataDuringCreation: true,
+                                removeFingerprintOnSuccess: true,
+                                metadata: {
+                                    bucketName: bucket,
+                                    objectName: filePath,
+                                    contentType: file.type || 'application/octet-stream',
+                                    cacheControl: '3600',
+                                },
+                                chunkSize: 6 * 1024 * 1024, // 6MB, as recommended by Supabase
+                                onError: (error) => {
+                                    console.error('Failed because: ' + error);
+                                    reject(new Error(`Tus upload failed: ${error.message}`));
+                                },
+                                onProgress: (bytesUploaded, bytesTotal) => {
+                                    const percentage = (bytesUploaded / bytesTotal * 100).toFixed(2);
+                                    setLoadingMessage(`Uploading ${file.name}: ${percentage}%`);
+                                },
+                                onSuccess: () => {
+                                    console.log(`Tus upload success: ${file.name}`);
+                                    resolve(null); // Resolve the promise
+                                },
+                            });
+
+                            // Check for previous uploads and resume
+                            upload.findPreviousUploads().then((previousUploads) => {
+                                if (previousUploads.length) {
+                                    upload.resumeFromPreviousUpload(previousUploads[0]);
+                                }
+                                // Start the upload
+                                upload.start();
+                            });
+                        });
+
+                        // If we reach here, the Promise resolved (onSuccess)
+
+                    } else {
+                        // --- STANDARD UPLOAD (for small files) ---
+                        setLoadingMessage(`Uploading ${file.name}...`);
+                        const { data: uploadData, error } = await supabaseClient.storage
+                            .from(bucket)
+                            .upload(filePath, file);
+
+                        if (error) throw new Error(`Standard upload failed: ${error.message}`);
+                    }
+
+                    // Get the public URL for the file we just uploaded (works for both TUS and standard)
+                    const { data: { publicUrl } } = supabaseClient.storage
+                        .from(bucket)
+                        .getPublicUrl(filePath);
+
+                    fileUrl = publicUrl;
+
+                    // Update our final data with the new URL
+                    finalOrderInstances[i].formData.uploadedFile = fileUrl;
+                }
+            }
+
+            // --- 3. CREATE STRIPE SESSION ---
+            setLoadingMessage("Redirecting to payment...");
+
+            const stripeRes = await fetch("/api/create-stripe-session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    orderItems: finalOrderInstances,
+                    total: usdPrice, // Use the calculated price
+                }),
+            });
+
+            if (!stripeRes.ok) {
+                const { error } = await stripeRes.json();
+                throw new Error(error || "Failed to create Stripe session.");
+            }
+
+            const { redirectUrl } = await stripeRes.json();
+
+            // --- 4. REDIRECT TO STRIPE ---
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            }
+
+        } catch (error: any) {
+            console.error(error);
+            setIsLoading(false);
+            alert("An error occurred: " + error.message);
         }
     }
 
@@ -178,9 +436,26 @@ function StageTwo({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* Order summary: credits and total price */}
-            <div className="mt-8 py-3 px-6 text-xl font-bold flex justify-end gap-8">
-                <span>Total Credits: {totalCredits}</span>
-                <span>Total: ${usdPrice} USD</span>
+            <div className="mt-8 py-4 px-6 rounded-lg bg-gray-900 border border-zinc-700 flex flex-col items-end gap-4">
+                <div className="text-xl font-bold flex gap-8">
+                    <span>Total Credits: {totalCredits}</span>
+                    <span>Total: ${usdPrice} USD</span>
+                </div>
+                
+                {isLoading ? (
+                    <div className="text-center p-4">
+                        <p className="text-lg font-semibold text-white">{loadingMessage}</p>
+                        <p className="text-sm text-zinc-400">Please keep this tab open.</p>
+                    </div>
+                ) : (
+                    <button
+                        onClick={handleStripePayment}
+                        disabled={isLoading || selectedServices.length === 0}
+                        className="bg-[#FE4231] text-white rounded-lg px-8 py-3 hover:bg-[#E03A2A] transition-colors font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isLoading ? "Processing..." : `Pay $${usdPrice} USD and Submit Order`}
+                    </button>
+                )}
             </div>
         </>
     );

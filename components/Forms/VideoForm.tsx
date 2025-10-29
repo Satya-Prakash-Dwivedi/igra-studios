@@ -1,34 +1,46 @@
 import React, { useState, ChangeEvent } from "react";
 import { ArrowLeft, Trash2, UploadCloud, Upload, Link2, Clock, Zap, Palette } from "lucide-react";
 
-function VideoForm({ onRemove, instanceId, service }: any) {
+// 1. Define the props it will now receive from the parent
+type VideoFormProps = {
+    onRemove: () => void;
+    instanceId: string;
+    service: any;
+    formData: Record<string, any>; // The data for this form
+    onChange: (field: string, value: any) => void; // The "messenger" function
+};
+
+function VideoForm({ onRemove, instanceId, service, formData, onChange }: VideoFormProps) {
     // Local form state
-    const [rawFootageLength, setRawFootageLength] = useState("");
-    const [finalVideoLength, setFinalVideoLength] = useState("");
-    const [pace, setPace] = useState("Normal"); // Slow, Normal, Fast, Super
-    const [tone, setTone] = useState<string[]>([]); // Multiple choices
-    const [assetsLink, setAssetsLink] = useState("");
-    const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    // const [rawFootageLength, setRawFootageLength] = useState("");
+    // const [finalVideoLength, setFinalVideoLength] = useState("");
+    // const [pace, setPace] = useState("Normal"); // Slow, Normal, Fast, Super
+    // const [tone, setTone] = useState<string[]>([]); // Multiple choices
+    // const [assetsLink, setAssetsLink] = useState("");
+    // const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
     // For credits calculation (example: 20 credits per minute of raw, min 100)
     const creditsPerMinute = 20;
     const minCredits = 100;
-    const rawMinutes = Number(rawFootageLength) || 0;
+    const rawMinutes = Number(formData.rawFootageLength);
     const calculatedCredits = Math.max(rawMinutes * creditsPerMinute, minCredits);
 
     // Handle tone option toggle (multiple)
     const handleToneToggle = (option: string) => {
-        setTone((prev) =>
-            prev.includes(option)
-                ? prev.filter((val) => val !== option)
-                : [...prev, option]
-        );
+        const currentTone = formData.tone || [];
+        const newTone = currentTone.includes(option)
+            ? currentTone.filter((val: string) => val !== option)
+            : [...currentTone, option];
+        
+        // Send the change up to the parent
+        onChange("tone", newTone);
     };
 
     // Handle file input
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setUploadedFile(e.target.files[0]);
+            // Send the entire File object up to the parent
+            onChange("uploadedFile", e.target.files[0]);
         }
     };
 
@@ -78,8 +90,8 @@ function VideoForm({ onRemove, instanceId, service }: any) {
                     <input
                         type="url"
                         className="w-full px-4 py-4 rounded-xl border border-gray-600/50 bg-gray-800/50 backdrop-blur-sm text-gray-100 placeholder-gray-400 focus:border-red-400/70 focus:outline-none focus:ring-2 focus:ring-red-400/20 transition-all duration-200"
-                        value={assetsLink}
-                        onChange={(e) => setAssetsLink(e.target.value)}
+                        value={formData.assetsLink}
+                        onChange={(e) => onChange("assetsLink", e.target.value)}
                         placeholder="https://drive.google.com/..."
                     />
                     <p className="text-sm text-gray-400 ml-1">Google Drive or Dropbox link (optional)</p>
@@ -104,16 +116,16 @@ function VideoForm({ onRemove, instanceId, service }: any) {
                             <div className="text-center">
                                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                                 <p className="text-gray-300 font-medium">
-                                    {uploadedFile ? uploadedFile.name : "Click to upload or drag and drop"}
+                                    {formData.uploadedFile ? formData.uploadedFile.name : "Click to upload or drag and drop"}
                                 </p>
                                 <p className="text-sm text-gray-500">Video or image files</p>
                             </div>
                         </div>
                     </div>
-                    {uploadedFile && (
+                    {formData.uploadedFile && (
                         <div className="flex items-center space-x-2 p-3 bg-green-500/10 border border-green-400/30 rounded-lg">
                             <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                            <span className="text-sm text-green-400 font-medium">Uploaded: {uploadedFile.name}</span>
+                            <span className="text-sm text-green-400 font-medium">Uploaded: {formData.uploadedFile.name}</span>
                         </div>
                     )}
                 </div>
@@ -131,8 +143,8 @@ function VideoForm({ onRemove, instanceId, service }: any) {
                             type="number"
                             min={0}
                             className="w-full px-4 py-4 rounded-xl border border-gray-600/50 bg-gray-800/50 backdrop-blur-sm text-gray-100 placeholder-gray-400 focus:border-red-400/70 focus:outline-none focus:ring-2 focus:ring-red-400/20 transition-all duration-200"
-                            value={rawFootageLength}
-                            onChange={(e) => setRawFootageLength(e.target.value)}
+                            value={formData.rawFootageLength}
+                            onChange={(e) => onChange("rawFootageLength", e.target.value)}
                             placeholder="e.g. 30"
                         />
                     </div>
@@ -147,8 +159,8 @@ function VideoForm({ onRemove, instanceId, service }: any) {
                             type="number"
                             min={0}
                             className="w-full px-4 py-4 rounded-xl border border-gray-600/50 bg-gray-800/50 backdrop-blur-sm text-gray-100 placeholder-gray-400 focus:border-red-400/70 focus:outline-none focus:ring-2 focus:ring-red-400/20 transition-all duration-200"
-                            value={finalVideoLength}
-                            onChange={(e) => setFinalVideoLength(e.target.value)}
+                            value={formData.finalVideoLength}
+                            onChange={(e) => onChange("finalVideoLength", e.target.value)}
                             placeholder="e.g. 5"
                         />
                     </div>
@@ -168,7 +180,7 @@ function VideoForm({ onRemove, instanceId, service }: any) {
                                 type="button"
                                 key={t}
                                 onClick={() => handleToneToggle(t)}
-                                className={`px-6 py-3 rounded-full border text-sm font-semibold transition-all duration-200 backdrop-blur-sm ${tone.includes(t)
+                                className={`px-6 py-3 rounded-full border text-sm font-semibold transition-all duration-200 backdrop-blur-sm ${formData.tone.includes(t)
                                     ? "bg-gradient-to-r from-red-500 to-red-600 border-red-400 text-white shadow-lg shadow-red-500/25 scale-105"
                                     : "bg-gray-800/50 border-gray-600/50 text-gray-300 hover:border-red-400/50 hover:bg-gray-700/50 hover:text-white"
                                     }`}
@@ -191,7 +203,7 @@ function VideoForm({ onRemove, instanceId, service }: any) {
                         {["Slow", "Normal", "Fast", "Super"].map((p) => (
                             <label
                                 key={p}
-                                className={`px-6 py-3 rounded-full cursor-pointer text-sm font-semibold transition-all duration-200 backdrop-blur-sm border ${pace === p
+                                className={`px-6 py-3 rounded-full cursor-pointer text-sm font-semibold transition-all duration-200 backdrop-blur-sm border ${formData.pace === p
                                     ? "bg-gradient-to-r from-red-500 to-red-600 border-red-400 text-white shadow-lg shadow-red-500/25 scale-105"
                                     : "bg-gray-800/50 border-gray-600/50 text-gray-300 hover:border-red-400/50 hover:bg-gray-700/50 hover:text-white"
                                     }`}
@@ -200,8 +212,8 @@ function VideoForm({ onRemove, instanceId, service }: any) {
                                     type="radio"
                                     name={`pace-${instanceId}`}
                                     value={p}
-                                    checked={pace === p}
-                                    onChange={() => setPace(p)}
+                                    checked={formData.pace === p}
+                                    onChange={() => onChange("pace", p)}
                                     className="sr-only"
                                 />
                                 {p}
